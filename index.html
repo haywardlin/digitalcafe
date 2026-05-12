@@ -1,0 +1,104 @@
+<!doctype html><html lang="zh-CN"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Digital Café — Starter</title>
+<style>
+  :root{--mx:900px}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0}
+  #app{max-width:var(--mx);margin:28px auto;padding:0 16px}
+  h1{font-size:24px;margin:0 0 8px}p.lead{color:#444;margin:6px 0 16px}
+  .actions{display:flex;gap:8px;flex-wrap:wrap}
+  button,input,select{font:inherit}
+  button{margin:8px 0;padding:8px 12px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer}
+  .grid{margin-top:8px}
+  article.card{border:1px solid #eee;padding:12px;margin:8px 0;border-radius:10px;background:#fff}
+  a.card-link{color:#0b66c3;text-decoration:none;font-weight:600}
+  .meta{color:#666;font-size:12px}
+  .why{margin-top:6px;color:#444;line-height:1.4}
+  .footer{margin:24px 0;color:#777;font-size:12px}
+</style>
+</head><body>
+<div id="app">
+  <h1>Digital Café — Starter</h1>
+  <p class="lead">精选适合头脑风暴与远程办公的咖啡馆；一键打开指定城市的 Google 地图搜索。</p>
+  <div class="actions">
+    <button id="toggleView">打开城市地图</button>
+    <label>快速筛选：
+      <select id="filterCity">
+        <option value="">全部城市</option>
+      </select>
+    </label>
+    <input id="q" placeholder="搜索名称/理由…" />
+  </div>
+  <div id="list" class="grid"></div>
+  <div class="footer">MIT 许可；仅为示例数据，请按需增删。</div>
+</div>
+
+<script>
+/** 数据：可按 { name, url, city, why } 扩展 **/
+const venues=[
+  {"name":"Tiong Bahru Bakery","url":"https://tiongbahrubakery.com/","city":"新加坡","why":"手作烘焙，座位适合办公"},
+  {"name":"Common Man Coffee Roasters","url":"https://commonmancoffeeroasters.com/","city":"新加坡","why":"精品咖啡，Wi‑Fi 稳定"},
+  {"name":"PS.Cafe","url":"https://www.pscafe.com/","city":"新加坡","why":"空间感强，氛围佳"},
+  {"name":"Cafe Xoho","url":"https://www.cafexoho.com/","city":"特拉维夫","why":"笔电友好，国际化人群"},
+  {"name":"Basma Coffee","url":"https://www.tripadvisor.com/Restaurant_Review-g293984-d6855821-Reviews-Basma_Coffee-Jaffa_Tel_Aviv_Tel_Aviv_District.html","city":"特拉维夫","why":"老雅法在地风味"},
+  {"name":"Cafe Puaa","url":"https://www.timeout.com/israel/restaurants/cafe-puaa","city":"特拉维夫","why":"波西米亚风，适合长谈"},
+  {"name":"Coupa Cafe","url":"https://www.coupacafe.com/","city":"硅谷","why":"斯坦福周边创业者聚集"},
+  {"name":"Philz Coffee (Palo Alto)","url":"https://philzcoffee.com/locations/forest-ave","city":"硅谷","why":"社区口碑好"},
+  {"name":"Prufrock Coffee","url":"https://prufrockcoffee.com/","city":"伦敦","why":"咖啡师培训中心，专注感强"},
+  {"name":"Workshop Coffee","url":"https://workshopcoffee.com/","city":"伦敦","why":"自家烘焙，座位相对安静"}
+];
+
+const $list=document.getElementById('list');
+const $toggle=document.getElementById('toggleView');
+const $filter=document.getElementById('filterCity');
+const $q=document.getElementById('q');
+
+function render(items){
+  $list.innerHTML='';
+  items.forEach(v=>{
+    const el=document.createElement('article');
+    el.className='card';
+    el.innerHTML=`
+      <div><a class="card-link" href="${v.url}" target="_blank" rel="noopener noreferrer">${v.name}</a>
+      <span class="meta"> — ${v.city}</span></div>
+      <div class="why">${v.why}</div>`;
+    $list.appendChild(el);
+  });
+}
+
+function uniqueCities(){
+  return Array.from(new Set(venues.map(v=>v.city))).sort();
+}
+
+function populateCityFilter(){
+  uniqueCities().forEach(c=>{
+    const opt=document.createElement('option');
+    opt.value=c; opt.textContent=c;
+    $filter.appendChild(opt);
+  });
+}
+
+function searchAndFilter(){
+  const kw=($q.value||'').trim().toLowerCase();
+  const city=$filter.value;
+  const res=venues.filter(v=>{
+    const hitCity = !city || v.city===city;
+    const hitKw = !kw || [v.name,v.city,v.why].some(x=>x.toLowerCase().includes(kw));
+    return hitCity && hitKw;
+  });
+  render(res);
+}
+
+$toggle.addEventListener('click',()=>{
+  const city = prompt('打开哪个城市的地图？例如：新加坡、特拉维夫、硅谷、伦敦');
+  if(!city) return;
+  const q=encodeURIComponent(city+' 咖啡馆 创业 氛围 WiFi');
+  window.open('https://www.google.com/maps/search/'+q,'_blank','noopener');
+});
+
+$q.addEventListener('input',searchAndFilter);
+$filter.addEventListener('change',searchAndFilter);
+
+populateCityFilter();
+render(venues);
+</script>
+</body></html> 
