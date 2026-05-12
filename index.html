@@ -1,104 +1,488 @@
-<!doctype html><html lang="zh-CN"><head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Digital Café — Starter</title>
-<style>
-  :root{--mx:900px}body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial;margin:0}
-  #app{max-width:var(--mx);margin:28px auto;padding:0 16px}
-  h1{font-size:24px;margin:0 0 8px}p.lead{color:#444;margin:6px 0 16px}
-  .actions{display:flex;gap:8px;flex-wrap:wrap}
-  button,input,select{font:inherit}
-  button{margin:8px 0;padding:8px 12px;border:1px solid #ddd;background:#fff;border-radius:8px;cursor:pointer}
-  .grid{margin-top:8px}
-  article.card{border:1px solid #eee;padding:12px;margin:8px 0;border-radius:10px;background:#fff}
-  a.card-link{color:#0b66c3;text-decoration:none;font-weight:600}
-  .meta{color:#666;font-size:12px}
-  .why{margin-top:6px;color:#444;line-height:1.4}
-  .footer{margin:24px 0;color:#777;font-size:12px}
-</style>
-</head><body>
-<div id="app">
-  <h1>Digital Café — Starter</h1>
-  <p class="lead">精选适合头脑风暴与远程办公的咖啡馆；一键打开指定城市的 Google 地图搜索。</p>
-  <div class="actions">
-    <button id="toggleView">打开城市地图</button>
-    <label>快速筛选：
-      <select id="filterCity">
-        <option value="">全部城市</option>
-      </select>
-    </label>
-    <input id="q" placeholder="搜索名称/理由…" />
-  </div>
-  <div id="list" class="grid"></div>
-  <div class="footer">MIT 许可；仅为示例数据，请按需增删。</div>
-</div>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Digital Café｜全球 AI 创业城市灵感地图</title>
+  <meta name="description" content="Digital Café：连接全球 AI 创业城市、咖啡馆与头脑风暴空间。" />
 
-<script>
-/** 数据：可按 { name, url, city, why } 扩展 **/
-const venues=[
-  {"name":"Tiong Bahru Bakery","url":"https://tiongbahrubakery.com/","city":"新加坡","why":"手作烘焙，座位适合办公"},
-  {"name":"Common Man Coffee Roasters","url":"https://commonmancoffeeroasters.com/","city":"新加坡","why":"精品咖啡，Wi‑Fi 稳定"},
-  {"name":"PS.Cafe","url":"https://www.pscafe.com/","city":"新加坡","why":"空间感强，氛围佳"},
-  {"name":"Cafe Xoho","url":"https://www.cafexoho.com/","city":"特拉维夫","why":"笔电友好，国际化人群"},
-  {"name":"Basma Coffee","url":"https://www.tripadvisor.com/Restaurant_Review-g293984-d6855821-Reviews-Basma_Coffee-Jaffa_Tel_Aviv_Tel_Aviv_District.html","city":"特拉维夫","why":"老雅法在地风味"},
-  {"name":"Cafe Puaa","url":"https://www.timeout.com/israel/restaurants/cafe-puaa","city":"特拉维夫","why":"波西米亚风，适合长谈"},
-  {"name":"Coupa Cafe","url":"https://www.coupacafe.com/","city":"硅谷","why":"斯坦福周边创业者聚集"},
-  {"name":"Philz Coffee (Palo Alto)","url":"https://philzcoffee.com/locations/forest-ave","city":"硅谷","why":"社区口碑好"},
-  {"name":"Prufrock Coffee","url":"https://prufrockcoffee.com/","city":"伦敦","why":"咖啡师培训中心，专注感强"},
-  {"name":"Workshop Coffee","url":"https://workshopcoffee.com/","city":"伦敦","why":"自家烘焙，座位相对安静"}
-];
+  <style>
+    :root {
+      --bg: #080808;
+      --card: rgba(255,255,255,.08);
+      --card2: rgba(255,255,255,.12);
+      --text: #f5f5f7;
+      --muted: #a1a1aa;
+      --line: rgba(255,255,255,.14);
+      --brand: #ffffff;
+      --radius: 24px;
+      --shadow: 0 24px 80px rgba(0,0,0,.45);
+    }
 
-const $list=document.getElementById('list');
-const $toggle=document.getElementById('toggleView');
-const $filter=document.getElementById('filterCity');
-const $q=document.getElementById('q');
+    * { box-sizing: border-box; }
 
-function render(items){
-  $list.innerHTML='';
-  items.forEach(v=>{
-    const el=document.createElement('article');
-    el.className='card';
-    el.innerHTML=`
-      <div><a class="card-link" href="${v.url}" target="_blank" rel="noopener noreferrer">${v.name}</a>
-      <span class="meta"> — ${v.city}</span></div>
-      <div class="why">${v.why}</div>`;
-    $list.appendChild(el);
-  });
-}
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background:
+        radial-gradient(circle at 20% 0%, rgba(80,120,255,.35), transparent 30%),
+        radial-gradient(circle at 80% 20%, rgba(255,140,80,.22), transparent 25%),
+        linear-gradient(180deg, #080808 0%, #111 100%);
+      color: var(--text);
+      min-height: 100vh;
+    }
 
-function uniqueCities(){
-  return Array.from(new Set(venues.map(v=>v.city))).sort();
-}
+    a { color: inherit; text-decoration: none; }
 
-function populateCityFilter(){
-  uniqueCities().forEach(c=>{
-    const opt=document.createElement('option');
-    opt.value=c; opt.textContent=c;
-    $filter.appendChild(opt);
-  });
-}
+    .page {
+      max-width: 1180px;
+      margin: 0 auto;
+      padding: 32px 18px 60px;
+    }
 
-function searchAndFilter(){
-  const kw=($q.value||'').trim().toLowerCase();
-  const city=$filter.value;
-  const res=venues.filter(v=>{
-    const hitCity = !city || v.city===city;
-    const hitKw = !kw || [v.name,v.city,v.why].some(x=>x.toLowerCase().includes(kw));
-    return hitCity && hitKw;
-  });
-  render(res);
-}
+    .nav {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 90px;
+    }
 
-$toggle.addEventListener('click',()=>{
-  const city = prompt('打开哪个城市的地图？例如：新加坡、特拉维夫、硅谷、伦敦');
-  if(!city) return;
-  const q=encodeURIComponent(city+' 咖啡馆 创业 氛围 WiFi');
-  window.open('https://www.google.com/maps/search/'+q,'_blank','noopener');
-});
+    .logo {
+      font-weight: 800;
+      letter-spacing: -.04em;
+      font-size: 20px;
+    }
 
-$q.addEventListener('input',searchAndFilter);
-$filter.addEventListener('change',searchAndFilter);
+    .navTag {
+      color: var(--muted);
+      font-size: 14px;
+    }
 
-populateCityFilter();
-render(venues);
-</script>
-</body></html> 
+    .hero {
+      max-width: 900px;
+      margin-bottom: 42px;
+    }
+
+    .badge {
+      display: inline-flex;
+      padding: 8px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(255,255,255,.08);
+      backdrop-filter: blur(16px);
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 22px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: clamp(46px, 9vw, 104px);
+      line-height: .9;
+      letter-spacing: -.075em;
+    }
+
+    .lead {
+      max-width: 680px;
+      margin: 24px 0 0;
+      color: var(--muted);
+      font-size: clamp(17px, 2.4vw, 22px);
+    }
+
+    .panel {
+      position: sticky;
+      top: 14px;
+      z-index: 10;
+      display: grid;
+      gap: 12px;
+      padding: 14px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: rgba(12,12,12,.72);
+      backdrop-filter: blur(22px);
+      box-shadow: var(--shadow);
+      margin-bottom: 26px;
+    }
+
+    .controls {
+      display: grid;
+      gap: 10px;
+      grid-template-columns: 1fr;
+    }
+
+    input, select, button {
+      width: 100%;
+      height: 48px;
+      border-radius: 16px;
+      border: 1px solid var(--line);
+      font: inherit;
+      outline: none;
+    }
+
+    input, select {
+      padding: 0 15px;
+      background: rgba(255,255,255,.08);
+      color: var(--text);
+    }
+
+    select option {
+      background: #111;
+      color: #fff;
+    }
+
+    button {
+      background: var(--brand);
+      color: #000;
+      font-weight: 750;
+      cursor: pointer;
+      transition: transform .18s ease, opacity .18s ease;
+    }
+
+    button:hover { transform: translateY(-1px); }
+    button:active { opacity: .78; transform: translateY(0); }
+
+    .summary {
+      color: var(--muted);
+      font-size: 13px;
+      padding-left: 3px;
+    }
+
+    .cityBar {
+      display: flex;
+      gap: 10px;
+      overflow-x: auto;
+      padding: 8px 0 18px;
+      margin-bottom: 10px;
+    }
+
+    .chip {
+      flex: 0 0 auto;
+      padding: 9px 13px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: rgba(255,255,255,.06);
+      font-size: 14px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+
+    .card {
+      position: relative;
+      overflow: hidden;
+      min-height: 210px;
+      padding: 22px;
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: linear-gradient(180deg, var(--card2), var(--card));
+      box-shadow: var(--shadow);
+      transition: transform .2s ease, border-color .2s ease, background .2s ease;
+    }
+
+    .card:hover {
+      transform: translateY(-4px);
+      border-color: rgba(255,255,255,.3);
+      background: linear-gradient(180deg, rgba(255,255,255,.16), rgba(255,255,255,.08));
+    }
+
+    .card::after {
+      content: "";
+      position: absolute;
+      right: -50px;
+      bottom: -60px;
+      width: 160px;
+      height: 160px;
+      border-radius: 50%;
+      background: rgba(255,255,255,.08);
+    }
+
+    .city {
+      display: inline-flex;
+      padding: 6px 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,.1);
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 26px;
+    }
+
+    .name {
+      margin: 0;
+      font-size: 25px;
+      line-height: 1.05;
+      letter-spacing: -.04em;
+    }
+
+    .why {
+      max-width: 92%;
+      margin: 14px 0 0;
+      color: var(--muted);
+      font-size: 15px;
+    }
+
+    .linkHint {
+      position: absolute;
+      left: 22px;
+      bottom: 20px;
+      font-size: 13px;
+      color: #fff;
+      opacity: .82;
+    }
+
+    .empty {
+      padding: 50px 20px;
+      border: 1px dashed var(--line);
+      border-radius: var(--radius);
+      color: var(--muted);
+      text-align: center;
+    }
+
+    footer {
+      margin-top: 44px;
+      color: var(--muted);
+      font-size: 13px;
+      text-align: center;
+    }
+
+    @media (min-width: 760px) {
+      .page { padding: 42px 28px 72px; }
+
+      .controls {
+        grid-template-columns: 180px 1fr 180px;
+      }
+
+      .grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (min-width: 1050px) {
+      .grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .card:first-child {
+        grid-column: span 2;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="page">
+    <nav class="nav">
+      <div class="logo">Digital Café</div>
+      <div class="navTag">AI Startup Cities</div>
+    </nav>
+
+    <section class="hero">
+      <div class="badge">☕ Global AI Founder Map · MIT License</div>
+      <h1>全球 AI 创业城市灵感地图</h1>
+      <p class="lead">
+        连接新加坡、特拉维夫、硅谷、伦敦等 AI 创业城市，发现适合远程办公、产品头脑风暴与创业者交流的咖啡馆。
+      </p>
+    </section>
+
+    <section class="panel">
+      <div class="controls">
+        <select id="cityFilter" aria-label="按城市筛选">
+          <option value="">全部城市</option>
+        </select>
+
+        <input id="searchInput" type="search" placeholder="搜索城市、咖啡馆、创业氛围…" />
+
+        <button id="openMapButton" type="button">打开城市地图</button>
+      </div>
+
+      <div id="summary" class="summary"></div>
+    </section>
+
+    <div id="cityBar" class="cityBar"></div>
+
+    <section id="venueList" class="grid"></section>
+
+    <footer>
+      Built for AI founders, product thinkers and global builders.
+    </footer>
+  </main>
+
+  <script>
+    const venues = [
+      {
+        name: "Tiong Bahru Bakery",
+        url: "https://tiongbahrubakery.com/",
+        city: "新加坡",
+        why: "手作烘焙、空间明亮，适合轻办公、晨间阅读和产品灵感整理。"
+      },
+      {
+        name: "Common Man Coffee Roasters",
+        url: "https://commonmancoffeeroasters.com/",
+        city: "新加坡",
+        why: "精品咖啡氛围浓，适合创业者约聊、远程办公和商业模式讨论。"
+      },
+      {
+        name: "PS.Cafe",
+        url: "https://www.pscafe.com/",
+        city: "新加坡",
+        why: "空间感强、环境舒适，适合产品讨论、客户会面和团队复盘。"
+      },
+      {
+        name: "Cafe Xoho",
+        url: "https://www.cafexoho.com/",
+        city: "特拉维夫",
+        why: "国际化人群密集，适合感受以色列创业社区的开放氛围。"
+      },
+      {
+        name: "Basma Coffee",
+        url: "https://www.tripadvisor.com/Restaurant_Review-g293984-d6855821-Reviews-Basma_Coffee-Jaffa_Tel_Aviv_Tel_Aviv_District.html",
+        city: "特拉维夫",
+        why: "老雅法在地风味，适合慢节奏思考产品、文化和市场机会。"
+      },
+      {
+        name: "Cafe Puaa",
+        url: "https://www.timeout.com/israel/restaurants/cafe-puaa",
+        city: "特拉维夫",
+        why: "波西米亚风格明显，适合长谈、灵感碰撞和创业故事交流。"
+      },
+      {
+        name: "Coupa Cafe",
+        url: "https://www.coupacafe.com/",
+        city: "硅谷",
+        why: "斯坦福周边创业者聚集，适合感受硅谷式创业密度。"
+      },
+      {
+        name: "Philz Coffee Palo Alto",
+        url: "https://philzcoffee.com/",
+        city: "硅谷",
+        why: "社区感强、交流自然，适合轻量商务约见和想法验证。"
+      },
+      {
+        name: "Prufrock Coffee",
+        url: "https://prufrockcoffee.com/",
+        city: "伦敦",
+        why: "精品咖啡专业度高，适合专注阅读、写作和独立思考。"
+      },
+      {
+        name: "Workshop Coffee",
+        url: "https://workshopcoffee.com/",
+        city: "伦敦",
+        why: "自家烘焙、氛围克制，适合产品经理做深度方案整理。"
+      },
+      {
+        name: "Blue Bottle Coffee Shibuya",
+        url: "https://bluebottlecoffee.jp/",
+        city: "东京",
+        why: "极简空间与高效率服务，适合观察日本消费电子与生活方式趋势。"
+      },
+      {
+        name: "% Arabica Shenzhen",
+        url: "https://arabica.coffee/",
+        city: "深圳",
+        why: "科技硬件创业者密集城市中的轻办公空间，适合连接供应链与产品灵感。"
+      }
+    ];
+
+    const cityFilter = document.getElementById("cityFilter");
+    const searchInput = document.getElementById("searchInput");
+    const openMapButton = document.getElementById("openMapButton");
+    const venueList = document.getElementById("venueList");
+    const summary = document.getElementById("summary");
+    const cityBar = document.getElementById("cityBar");
+
+    function cities() {
+      return [...new Set(venues.map(v => v.city))].sort();
+    }
+
+    function init() {
+      cities().forEach(city => {
+        const option = document.createElement("option");
+        option.value = city;
+        option.textContent = city;
+        cityFilter.appendChild(option);
+
+        const chip = document.createElement("button");
+        chip.className = "chip";
+        chip.type = "button";
+        chip.textContent = city;
+        chip.onclick = () => {
+          cityFilter.value = city;
+          render();
+        };
+        cityBar.appendChild(chip);
+      });
+
+      render();
+    }
+
+    function filteredVenues() {
+      const city = cityFilter.value;
+      const keyword = searchInput.value.trim().toLowerCase();
+
+      return venues.filter(v => {
+        const text = `${v.name} ${v.city} ${v.why}`.toLowerCase();
+        return (!city || v.city === city) && (!keyword || text.includes(keyword));
+      });
+    }
+
+    function render() {
+      const list = filteredVenues();
+      venueList.innerHTML = "";
+      summary.textContent = `当前显示 ${list.length} / ${venues.length} 个灵感地点`;
+
+      if (!list.length) {
+        venueList.innerHTML = `<div class="empty">没有找到匹配地点，换个关键词试试。</div>`;
+        return;
+      }
+
+      list.forEach(v => {
+        const card = document.createElement("a");
+        card.className = "card";
+        card.href = v.url;
+        card.target = "_blank";
+        card.rel = "noopener noreferrer";
+
+        card.innerHTML = `
+          <span class="city">${escapeHtml(v.city)}</span>
+          <h2 class="name">${escapeHtml(v.name)}</h2>
+          <p class="why">${escapeHtml(v.why)}</p>
+          <div class="linkHint">Visit place →</div>
+        `;
+
+        venueList.appendChild(card);
+      });
+    }
+
+    function openMap() {
+      let city = cityFilter.value;
+
+      if (!city) {
+        city = prompt("请输入城市，例如：新加坡、硅谷、特拉维夫、伦敦、深圳、东京");
+      }
+
+      if (!city) return;
+
+      const q = encodeURIComponent(`${city} AI 创业 咖啡馆 coworking startup cafe`);
+      window.open(`https://www.google.com/maps/search/${q}`, "_blank", "noopener,noreferrer");
+    }
+
+    function escapeHtml(value) {
+      return String(value)
+        .replaceAll("&", "&amp;")
+        .replaceAll("<", "&lt;")
+        .replaceAll(">", "&gt;")
+        .replaceAll('"', "&quot;")
+        .replaceAll("'", "&#039;");
+    }
+
+    cityFilter.addEventListener("change", render);
+    searchInput.addEventListener("input", render);
+    openMapButton.addEventListener("click", openMap);
+
+    init();
+  </script>
+</body>
+</html>
